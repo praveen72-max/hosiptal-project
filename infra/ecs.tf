@@ -1,7 +1,9 @@
+# ECS Cluster
 resource "aws_ecs_cluster" "cluster" {
   name = "hospital-cluster"
 }
 
+# IAM Role for ECS Tasks
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "ecsTaskExecutionRole"
   assume_role_policy = jsonencode({
@@ -19,6 +21,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Security Group for ECS
 resource "aws_security_group" "ecs_sg" {
   vpc_id = aws_vpc.main.id
 
@@ -37,7 +40,9 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-# Backend task definition
+# =========================
+# Backend Task Definition
+# =========================
 resource "aws_ecs_task_definition" "backend" {
   family                   = "hospital-backend"
   network_mode             = "awsvpc"
@@ -56,7 +61,9 @@ resource "aws_ecs_task_definition" "backend" {
   ])
 }
 
-# Frontend task definition
+# =========================
+# Frontend Task Definition
+# =========================
 resource "aws_ecs_task_definition" "frontend" {
   family                   = "hospital-frontend"
   network_mode             = "awsvpc"
@@ -75,7 +82,9 @@ resource "aws_ecs_task_definition" "frontend" {
   ])
 }
 
+# =========================
 # Backend Service
+# =========================
 resource "aws_ecs_service" "backend_service" {
   name            = "hospital-backend"
   cluster         = aws_ecs_cluster.cluster.id
@@ -88,9 +97,20 @@ resource "aws_ecs_service" "backend_service" {
     subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
     security_groups  = [aws_security_group.ecs_sg.id]
   }
+
+  # 🔗 Connect backend to its target group
+  load_balancer {
+    target_group_arn = aws_lb_target_group.backend_tg.arn
+    container_name   = "backend"
+    container_port   = 5000
+  }
+
+  depends_on = [aws_lb_listener.http]
 }
 
+# =========================
 # Frontend Service
+# =========================
 resource "aws_ecs_service" "frontend_service" {
   name            = "hospital-frontend"
   cluster         = aws_ecs_cluster.cluster.id
@@ -103,4 +123,13 @@ resource "aws_ecs_service" "frontend_service" {
     subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
     security_groups  = [aws_security_group.ecs_sg.id]
   }
+
+  # 🔗 Connect frontend to its target group
+  load_balancer {
+    target_group_arn = aws_lb_target_group.frontend_tg.arn
+    container_name   = "frontend"
+    container_port   = 80
+  }
+
+  depends_on = [aws_lb_listener.http]
 }
