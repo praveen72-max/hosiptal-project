@@ -6,30 +6,15 @@ terraform {
     }
   }
 
+  # Local backend – stores state file locally (terraform.tfstate)
   backend "local" {}
 }
 
+# --- AWS Provider ---
 provider "aws" {
   region = var.aws_region
 }
 
-# Include all modules
-module "network" {
-  source = "./vpc"
-}
-
-module "ecr" {
-  source = "./ecr"
-}
-
-module "ecs" {
-  source = "./ecs"
-  vpc_id             = module.network.vpc_id
-  subnet_ids         = module.network.public_subnets
-  backend_repo_url   = module.ecr.backend_repo_url
-  frontend_repo_url  = module.ecr.frontend_repo_url
-}
-
-output "load_balancer_dns" {
-  value = module.ecs.alb_dns
-}
+# Note: Terraform automatically loads all .tf files in this directory
+# (vpc.tf, ecr.tf, ecs.tf, alb.tf, variables.tf).
+# Keep outputs in their resource files (or a single outputs.tf) but don't duplicate names.

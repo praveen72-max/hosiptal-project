@@ -1,8 +1,3 @@
-variable "vpc_id" {}
-variable "subnet_ids" {}
-variable "backend_repo_url" {}
-variable "frontend_repo_url" {}
-
 resource "aws_ecs_cluster" "cluster" {
   name = "hospital-cluster"
 }
@@ -12,8 +7,8 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
       Principal = { Service = "ecs-tasks.amazonaws.com" }
     }]
   })
@@ -25,7 +20,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
 }
 
 resource "aws_security_group" "ecs_sg" {
-  vpc_id = var.vpc_id
+  vpc_id = aws_vpc.main.id
 
   ingress {
     from_port   = 0
@@ -42,7 +37,7 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-# Backend Task
+# Backend task definition
 resource "aws_ecs_task_definition" "backend" {
   family                   = "hospital-backend"
   network_mode             = "awsvpc"
@@ -53,15 +48,15 @@ resource "aws_ecs_task_definition" "backend" {
 
   container_definitions = jsonencode([
     {
-      name      = "backend"
-      image     = "${var.backend_repo_url}:latest"
-      essential = true
+      name         = "backend"
+      image        = "${var.backend_repo_url}:latest"
+      essential    = true
       portMappings = [{ containerPort = 5000 }]
     }
   ])
 }
 
-# Frontend Task
+# Frontend task definition
 resource "aws_ecs_task_definition" "frontend" {
   family                   = "hospital-frontend"
   network_mode             = "awsvpc"
@@ -72,9 +67,9 @@ resource "aws_ecs_task_definition" "frontend" {
 
   container_definitions = jsonencode([
     {
-      name      = "frontend"
-      image     = "${var.frontend_repo_url}:latest"
-      essential = true
+      name         = "frontend"
+      image        = "${var.frontend_repo_url}:latest"
+      essential    = true
       portMappings = [{ containerPort = 80 }]
     }
   ])
@@ -90,7 +85,7 @@ resource "aws_ecs_service" "backend_service" {
 
   network_configuration {
     assign_public_ip = true
-    subnets          = var.subnet_ids
+    subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
     security_groups  = [aws_security_group.ecs_sg.id]
   }
 }
@@ -105,11 +100,7 @@ resource "aws_ecs_service" "frontend_service" {
 
   network_configuration {
     assign_public_ip = true
-    subnets          = var.subnet_ids
+    subnets          = [aws_subnet.public_a.id, aws_subnet.public_b.id]
     security_groups  = [aws_security_group.ecs_sg.id]
   }
-}
-
-output "alb_dns" {
-  value = aws_lb.app_lb.dns_name
 }

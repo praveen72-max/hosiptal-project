@@ -2,21 +2,21 @@ resource "aws_lb" "app_lb" {
   name               = "hospital-lb"
   internal           = false
   load_balancer_type = "application"
-  subnets            = var.subnet_ids
+  subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
 }
 
 resource "aws_lb_target_group" "backend_tg" {
   name     = "backend-tg"
   port     = 5000
   protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  vpc_id   = aws_vpc.main.id
 }
 
 resource "aws_lb_target_group" "frontend_tg" {
   name     = "frontend-tg"
   port     = 80
   protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  vpc_id   = aws_vpc.main.id
 }
 
 resource "aws_lb_listener" "http" {
