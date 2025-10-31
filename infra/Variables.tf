@@ -16,13 +16,13 @@ variable "subnet_ids" {
 }
 
 variable "backend_repo_url" {
-  description = "ECR repo URL for backend (set via terraform.tfvars or leave empty to create repos)"
+  description = "ECR repo URL for backend"
   type        = string
-  default     = ""
+  default     = "090659571144.dkr.ecr.us-east-1.amazonaws.com/hospital-backend"
 }
 
 variable "frontend_repo_url" {
-  description = "ECR repo URL for frontend (set via terraform.tfvars or leave empty to create repos)"
+  description = "ECR repo URL for frontend"
   type        = string
-  default     = ""
+  default     = "090659571144.dkr.ecr.us-east-1.amazonaws.com/hospital-frontend"
 }
